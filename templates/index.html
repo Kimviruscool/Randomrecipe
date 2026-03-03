@@ -1,10 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Random Recipe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘 뭐 먹지?</title>
+    <link rel="stylesheet" href="/static/index.css">
 </head>
 <body>
-    <h1>Random Recipe page</h1>
+    <div class="container">
+        <button id="btn-back" class="btn-back" onclick="goBack()" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4e5968" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+
+        <header>
+            <h1 class="logo">오늘 뭐 먹지?</h1>
+            <p class="subtitle">결정 장애를 해결해 드려요</p>
+        </header>
+
+        <main id="app">
+            <section id="step-1" class="step active">
+                <button class="btn-main" onclick="selectMode('cook')">🍳 직접 만들기</button>
+                <button class="btn-main" onclick="selectMode('delivery')">🛵 배달·가서 먹기</button>
+            </section>
+
+            <section id="step-2-cook" class="step">
+                <h2 class="section-title">집에 어떤 재료가 있나요?</h2>
+                <div class="input-group">
+                    <input type="text" id="ingredients" placeholder="예: 계란, 스팸, 김치">
+                    <button class="btn-submit" onclick="goToCookCategory()">완료</button>
+                    <button class="btn-no-ingredients" onclick="goToCookCategory(true)">재료가 하나도 없어요</button>
+                </div>
+            </section>
+
+            <section id="step-3-cook-category" class="step">
+                <h2 class="section-title">어떤 스타일로 만들까요?</h2>
+                <div class="grid-buttons">
+                    <button class="btn-sub" onclick="selectCookCategory('한식')">한식</button>
+                    <button class="btn-sub" onclick="selectCookCategory('양식')">양식</button>
+                    <button class="btn-sub" onclick="selectCookCategory('중식')">중식</button>
+                    <button class="btn-sub" onclick="selectCookCategory('일식')">일식</button>
+                    <button class="btn-sub" onclick="selectCookCategory('디저트')">디저트</button>
+                    <button class="btn-sub" onclick="selectCookCategory('그외')">그외</button>
+                </div>
+                <button id="btn-cook-final" class="btn-recommend" style="display:none; margin-top:20px;" onclick="submitCookFinal()">레시피 추천받기</button>
+            </section>
+
+            <section id="step-2-delivery" class="step">
+                <h2 class="section-title">어떤 종류가 당기나요?</h2>
+                <div class="grid-buttons">
+                    <button class="btn-sub" onclick="selectDeliveryCategory('한식')">한식</button>
+                    <button class="btn-sub" onclick="selectDeliveryCategory('양식')">양식</button>
+                    <button class="btn-sub" onclick="selectDeliveryCategory('중식')">중식</button>
+                    <button class="btn-sub" onclick="selectDeliveryCategory('일식')">일식</button>
+                    <button class="btn-sub" onclick="selectDeliveryCategory('디저트')">디저트</button>
+                    <button class="btn-sub" onclick="selectDeliveryCategory('그외')">그외</button>
+                </div>
+            </section>
+
+            <section id="step-3-delivery" class="step">
+                <h2 class="section-title">원하는 맛을 골라보세요</h2>
+                <div class="grid-buttons" id="flavor-group">
+                    <button class="btn-chip" onclick="toggleFlavor(this, '단맛')">단맛</button>
+                    <button class="btn-chip" onclick="toggleFlavor(this, '짠맛')">짠맛</button>
+                    <button class="btn-chip" onclick="toggleFlavor(this, '매운맛')">매운맛</button>
+                    <button class="btn-chip" onclick="toggleFlavor(this, '담백한맛')">담백한맛</button>
+                    <button class="btn-chip" onclick="toggleFlavor(this, '신맛')">신맛</button>
+                    <button class="btn-chip" onclick="toggleFlavor(this, '감칠맛')">감칠맛</button>
+                    <button class="btn-chip" onclick="toggleFlavor(this, '새콤한맛')">새콤한맛</button>
+                    <button class="btn-chip active" onclick="toggleFlavor(this, '상관없음')">상관없음</button>
+                </div>
+                <button class="btn-recommend" onclick="submitDelivery()">추천 받기</button>
+            </section>
+
+            <section id="result-area" class="step">
+                <div class="result-card">
+                    <p id="result-text">추천 중...</p>
+                    <button class="btn-reset" onclick="location.reload()">다시 하기</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="/static/index.js"></script>
 </body>
 </html>
