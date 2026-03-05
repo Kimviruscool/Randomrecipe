@@ -41,6 +41,7 @@ function selectMode(mode) {
 function goToCookCategory(noIngredients = false) {
     userIngredients = noIngredients ? '없음' : document.getElementById('ingredients').value;
     showStep('step-3-cook-category');
+    console.log(userIngredients)
 }
 
 // [직접만들기 전용] 3단계: 요리 스타일 선택
@@ -49,7 +50,7 @@ function selectCookCategory(cat) {
     // 모든 버튼 비활성화 후 선택된 버튼만 활성화 스타일 적용
     document.querySelectorAll('#step-3-cook-category .btn-sub').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-
+    console.log(selectedCategory)
     // 추천받기 버튼 노출
     document.getElementById('btn-cook-final').style.display = 'block';
 }
