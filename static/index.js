@@ -58,6 +58,7 @@ function selectCookCategory(cat) {
 function selectDeliveryCategory(cat) {
     selectedCategory = cat;
     showStep('step-3-delivery');
+    console.log(selectedCategory)
 }
 
 // [배달 전용] 3단계: 맛 토글
@@ -67,15 +68,19 @@ function toggleFlavor(elem, flavor) {
         selectedFlavors.add('상관없음');
         document.querySelectorAll('.btn-chip').forEach(btn => btn.classList.remove('active'));
         elem.classList.add('active');
+        console.log('0')
     } else {
         selectedFlavors.delete('상관없음');
         document.querySelector('.btn-chip[onclick*="상관없음"]').classList.remove('active');
+        console.log('1')
         if (selectedFlavors.has(flavor)) {
             selectedFlavors.delete(flavor);
             elem.classList.remove('active');
+            console.log('2')
         } else {
             selectedFlavors.add(flavor);
             elem.classList.add('active');
+            console.log(flavor)
         }
     }
 }
