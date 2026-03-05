@@ -102,3 +102,54 @@ function submitDelivery() {
     document.getElementById('result-text').innerText =
         `${selectedCategory} 메뉴 중 ${flavors.join(', ')} 특징을 가진 음식을 랜덤으로 선정 중입니다!`;
 }
+
+//03.05 add
+function sendDataToServer(data){
+    try{
+        const response = await fetch('/api/recommend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data), // 데이터를 JSON 문자열로 변환하여 전송
+        });
+
+        const result = await response.json();
+        // 서버에서 받은 AI 응답을 화면에 표시
+        document.getElementById('result-text').innerText = result.answer;
+    } catch(error) {
+        console.log("Error :", error),
+        document.getElementById('result-text').innerText = "오류가 발생했습니다. 다시 시도해주세요.";
+    }
+}
+
+// 최종 제출 (직접 만들기)
+function submitCookFinal() {
+    showStep('result-area');
+
+    // 넘길 데이터 구성
+    const data = {
+        mode: 'cook',
+        ingredients: userIngredients,
+        category: selectedCategory
+    };
+
+    console.log("Sending Cook Data:", data);
+    sendDataToServer(data);
+}
+
+// 최종 제출 (배달)
+function submitDelivery() {
+    const flavors = Array.from(selectedFlavors);
+    showStep('result-area');
+
+    // 넘길 데이터 구성
+    const data = {
+        mode: 'delivery',
+        category: selectedCategory,
+        flavors: flavors
+    };
+
+    console.log("Sending Delivery Data:", data);
+    sendDataToServer(data);
+}
