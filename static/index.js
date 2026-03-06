@@ -86,70 +86,45 @@ function toggleFlavor(elem, flavor) {
     }
 }
 
-// 최종 제출 (직접 만들기)
-function submitCookFinal() {
-    showStep('result-area');
-    document.getElementById('result-text').innerText =
-        `[${selectedCategory}] 스타일로 "${userIngredients}" 재료를 활용한 최고의 레시피를 AI가 생성 중입니다...`;
+//add 03.06 send data
+function requestAI(payload) {
+    const resultText = document.getElementById('result-text');
+    resultText.innerText = "음... 무엇이 좋을지 고민하고 있어요. 잠시만요! 🤔";
 
-    // 여기서 실제 FastAPI 백엔드로 fetch 요청을 보낼 수 있습니다.
-}
-
-// 최종 제출 (배달)
-function submitDelivery() {
-    const flavors = Array.from(selectedFlavors);
-    showStep('result-area');
-    document.getElementById('result-text').innerText =
-        `${selectedCategory} 메뉴 중 ${flavors.join(', ')} 특징을 가진 음식을 랜덤으로 선정 중입니다!`;
-}
-
-//03.05 add
-function sendDataToServer(data){
-    try{
+    try {
+        // fetch를 통해 파이썬의 /api/recommend 주소로 보따리를 던집니다.
         const response = await fetch('/api/recommend', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data), // 데이터를 JSON 문자열로 변환하여 전송
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload) // 보따리를 전송 가능한 상태(문자열)로 만듭니다.
         });
 
-        const result = await response.json();
-        // 서버에서 받은 AI 응답을 화면에 표시
-        document.getElementById('result-text').innerText = result.answer;
-    } catch(error) {
-        console.log("Error :", error),
-        document.getElementById('result-text').innerText = "오류가 발생했습니다. 다시 시도해주세요.";
+        const data = await response.json();
+        resultText.innerText = data.message; // 파이썬이 보내준 정답을 화면에 표시합니다.
+    } catch (error) {
+        resultText.innerText = "서버와 연결이 끊겼어요. 다시 시도해 주세요.";
     }
 }
 
-// 최종 제출 (직접 만들기)
+// 최종 제출 (직접 만들기) 0306수정
 function submitCookFinal() {
     showStep('result-area');
-
-    // 넘길 데이터 구성
-    const data = {
+    // 흩어진 재료들을 하나의 보따리에 담습니다.
+    const myData = {
         mode: 'cook',
         ingredients: userIngredients,
         category: selectedCategory
     };
-
-    console.log("Sending Cook Data:", data);
-    sendDataToServer(data);
+    requestAI(myData); // 보따리 전송!
 }
 
-// 최종 제출 (배달)
+// 최종 제출 (배달) 0306수정
 function submitDelivery() {
-    const flavors = Array.from(selectedFlavors);
     showStep('result-area');
-
-    // 넘길 데이터 구성
-    const data = {
+    const myData = {
         mode: 'delivery',
         category: selectedCategory,
-        flavors: flavors
+        flavors: Array.from(selectedFlavors) // Set을 리스트로 바꿔서 담습니다.
     };
-
-    console.log("Sending Delivery Data:", data);
-    sendDataToServer(data);
+    requestAI(myData); // 보따리 전송!
 }
