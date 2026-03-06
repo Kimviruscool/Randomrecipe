@@ -6,6 +6,11 @@ let userIngredients = '';
 let historyStack = [];
 let currentStepId = 'step-1';
 
+let currentRecipe = {
+    ingredients: "",
+    steps: ""
+};
+
 // 화면 전환 함수
 function showStep(stepId, saveToHistory = true) {
     if (saveToHistory) historyStack.push(currentStepId);
@@ -89,19 +94,29 @@ function toggleFlavor(elem, flavor) {
 //add 03.06 send data
 async function requestAI(payload) {
     const resultText = document.getElementById('result-text');
-    resultText.innerText = "음... 무엇이 좋을지 고민하고 있어요. 잠시만요! 🤔";
+    resultText.innerText = "음... 무엇이 좋을지 AI가 고민하고 있어요. 잠시만요! 🤔";
 
     try {
-        // fetch를 통해 파이썬의 /api/recommend 주소로 보따리를 던집니다.
         const response = await fetch('/api/recommend', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload) // 보따리를 전송 가능한 상태(문자열)로 만듭니다.
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
-        resultText.innerText = data.message; // 파이썬이 보내준 정답을 화면에 표시합니다.
+
+        // 데이터를 조각내어 배열로 저장
+        recipePages = parseRecipeData(data);
+        currentPageIndex = 0;
+
+        // 화면 갱신
+        if (recipePages.length > 0) {
+            updateRecipeUI();
+        } else {
+            resultText.innerText = "추천 결과를 가져오지 못했습니다.";
+        }
     } catch (error) {
+        console.error("Error:", error);
         resultText.innerText = "서버와 연결이 끊겼어요. 다시 시도해 주세요.";
     }
 }
@@ -128,3 +143,72 @@ function submitDelivery() {
     };
     requestAI(myData); // 보따리 전송!
 }
+
+// 페이지네이션 관련 전역 변수
+let recipePages = [];
+let currentPageIndex = 0;
+
+// 1. 서버에서 받은 데이터를 조각내는 함수
+function parseRecipeData(data) {
+    const pages = [];
+
+    // [페이지 1] 재료 및 메뉴 소개
+    if (data.ingredients) {
+        pages.push(`🛒 필요 재료\n\n${data.ingredients}`);
+    }
+
+    // [페이지 2~N] 조리 순서 분리
+    if (data.steps) {
+        // 숫자(1. 2. 3.)를 기준으로 텍스트를 나눕니다.
+        const stepsArray = data.steps.split(/\n(?=\d+\.)/);
+
+        let tipContent = "";
+
+        stepsArray.forEach(step => {
+            const trimmedStep = step.trim();
+            // 만약 팁(⭐ 또는 "팁:")이 포함되어 있다면 따로 빼둡니다.
+            if (trimmedStep.includes('⭐') || trimmedStep.includes('팁:')) {
+                tipContent += trimmedStep + "\n\n";
+            } else if (trimmedStep.length > 0) {
+                pages.push(`👨‍🍳 조리 단계\n\n${trimmedStep}`);
+            }
+        });
+
+        // [마지막 페이지] 팁 추가
+        if (tipContent) {
+            pages.push(`⭐ 셰프의 팁\n\n${tipContent.trim()}`);
+        }
+    }
+    return pages;
+}
+
+// 2. 화면 업데이트 함수
+function updateRecipeUI() {
+    const textEl = document.getElementById('result-text');
+    const pageNumEl = document.getElementById('current-page');
+    const totalNumEl = document.getElementById('total-pages');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const indicator = document.getElementById('page-indicator');
+
+    // 내용 교체
+    textEl.innerText = recipePages[currentPageIndex];
+    textEl.classList.remove('recipe-page-active');
+    void textEl.offsetWidth; // 애니메이션 리셋
+    textEl.classList.add('recipe-page-active');
+
+    // 페이지 번호 및 버튼 가시성 제어
+    pageNumEl.innerText = currentPageIndex + 1;
+    totalNumEl.innerText = recipePages.length;
+    indicator.style.display = 'block';
+
+    prevBtn.style.display = currentPageIndex === 0 ? 'none' : 'flex';
+    nextBtn.style.display = currentPageIndex === recipePages.length - 1 ? 'none' : 'flex';
+}
+
+// 3. 페이지 이동 함수
+function changePage(direction) {
+    currentPageIndex += direction;
+    updateRecipeUI();
+}
+

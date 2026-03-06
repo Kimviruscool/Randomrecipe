@@ -6,7 +6,7 @@ def clean_text(text):
     if not text:
         return ""
     # **텍스트** 또는 * 리스트 기호를 제거합니다.
-    cleaned = text.replace("**", "").replace("*", "")
+    cleaned = text.replace("**", "").replace("*", "").replace("***","").replace("###","").replace("##","").replace("#","")
     # 양끝 공백을 정리합니다.
     return cleaned.strip()
 

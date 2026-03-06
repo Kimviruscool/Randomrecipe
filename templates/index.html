@@ -73,11 +73,25 @@
             </section>
 
             <section id="result-area" class="step">
-                <div class="result-card">
-                    <p id="result-text">추천 중...</p>
-                    <button class="btn-reset" onclick="location.reload()">다시 하기</button>
+                <div class="result-card-wrapper" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <button id="prev-btn" class="nav-arrow" onclick="changePage(-1)" style="display: none;">❮</button>
+
+                    <div class="result-card" style="flex: 1; min-height: 300px;">
+                        <div id="recipe-content">
+                            <p id="result-text">추천 중...</p>
+                        </div>
+                    </div>
+
+                    <button id="next-btn" class="nav-arrow" onclick="changePage(1)" style="display: none;">❯</button>
                 </div>
+
+                <div id="page-indicator" style="margin-top: 15px; color: var(--toss-gray); font-size: 14px; font-weight: 500; display: none;">
+                    <span id="current-page">1</span> / <span id="total-pages">1</span>
+                </div>
+
+                <button class="btn-reset" onclick="location.reload()">다시 하기</button>
             </section>
+
         </main>
     </div>
     <script src="/static/index.js"></script>
