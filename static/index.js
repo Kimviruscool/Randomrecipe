@@ -87,7 +87,7 @@ function toggleFlavor(elem, flavor) {
 }
 
 //add 03.06 send data
-function requestAI(payload) {
+async function requestAI(payload) {
     const resultText = document.getElementById('result-text');
     resultText.innerText = "음... 무엇이 좋을지 고민하고 있어요. 잠시만요! 🤔";
 
