@@ -17,7 +17,6 @@ let currentPageIndex = 0;
  * [화면 전환 및 네비게이션]
  */
 
-// 특정 단계로 화면 이동
 function showStep(stepId, saveToHistory = true) {
     if (saveToHistory) historyStack.push(currentStepId);
 
@@ -26,12 +25,10 @@ function showStep(stepId, saveToHistory = true) {
 
     currentStepId = stepId;
 
-    // 뒤로가기 버튼 표시 제어 (메인화면이나 결과창에서는 숨김)
     const backBtn = document.getElementById('btn-back');
     backBtn.style.display = (stepId === 'step-1' || stepId === 'result-area') ? 'none' : 'block';
 }
 
-// 이전 단계로 돌아가기
 function goBack() {
     if (historyStack.length > 0) {
         const prevStep = historyStack.pop();
@@ -43,7 +40,6 @@ function goBack() {
  * [사용자 선택 로직]
  */
 
-// 1단계: 직접 만들기 vs 배달 선택
 function selectMode(mode) {
     selectedMode = mode;
     if (mode === 'cook') {
@@ -53,30 +49,23 @@ function selectMode(mode) {
     }
 }
 
-// 직접 만들기 2단계: 재료 입력 후 카테고리 이동
 function goToCookCategory(noIngredients = false) {
     userIngredients = noIngredients ? '없음' : document.getElementById('ingredients').value;
     showStep('step-3-cook-category');
 }
 
-// 직접 만들기 3단계: 요리 스타일 선택
 function selectCookCategory(cat) {
     selectedCategory = cat;
-    // 선택된 버튼에만 active 클래스 적용
     document.querySelectorAll('#step-3-cook-category .btn-sub').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-    
-    // 최종 추천 버튼 표시
     document.getElementById('btn-cook-final').style.display = 'block';
 }
 
-// 배달 전용 2단계: 카테고리 선택
 function selectDeliveryCategory(cat) {
     selectedCategory = cat;
     showStep('step-3-delivery');
 }
 
-// 배달 전용 3단계: 맛 선택 (칩 토글 로직)
 function toggleFlavor(elem, flavor) {
     if (flavor === '상관없음') {
         selectedFlavors.clear();
@@ -85,8 +74,8 @@ function toggleFlavor(elem, flavor) {
         elem.classList.add('active');
     } else {
         selectedFlavors.delete('상관없음');
-        const normalChip = document.querySelector('.btn-chip[onclick*="상관없음"]');
-        if (normalChip) normalChip.classList.remove('active');
+        const defaultChip = document.querySelector('.btn-chip[onclick*="상관없음"]');
+        if(defaultChip) defaultChip.classList.remove('active');
 
         if (selectedFlavors.has(flavor)) {
             selectedFlavors.delete(flavor);
@@ -99,21 +88,41 @@ function toggleFlavor(elem, flavor) {
 }
 
 /**
- * [데이터 통신 및 페이지네이션]
+ * [데이터 통신 및 페이지네이션 핵심 로직]
  */
 
-// 1. 서버에서 받은 데이터를 '---' 기준으로 쪼개는 함수
-function parseRecipeData(data) {
-    // 파이썬이 보낸 재료와 순서 텍스트를 하나로 합침
-    const fullContent = `${data.ingredients}\n---\n${data.steps}`;
-    
-    // '---' 기호를 기준으로 답변을 조각내어 배열로 변환
-    return fullContent.split('---')
-        .map(chunk => chunk.trim())
-        .filter(chunk => chunk.length > 0);
+// 1. 데이터를 페이지별로 나누는 함수 (수정됨)
+function parseRecipeData(data, mode) {
+    if (mode === 'delivery') {
+        // 배달/가서먹기 모드: 전체 내용을 한 페이지에 담습니다.
+        return [data.ingredients];
+    }
+
+    const pages = [];
+
+    // [페이지 1] 재료 정보
+    if (data.ingredients) {
+        pages.push(`🛒 필요 재료\n\n${data.ingredients}`);
+    }
+
+    // [페이지 2~N] 조리 순서를 숫자(1. 2. 3...) 기준으로 쪼갭니다.
+    if (data.steps && !data.steps.includes("조리 순서 정보가 없습니다")) {
+        // 정규표현식: 숫자와 마침표(예: 1. 2.)가 나오는 지점 앞에서 자릅니다.
+        const stepsArray = data.steps.split(/(?=\d+\.)/);
+
+        stepsArray.forEach(step => {
+            const trimmedStep = step.trim();
+            if (trimmedStep.length > 0) {
+                // 팁이나 마무리 멘트가 섞여있어도 숫자 기준으로 페이지가 생성됩니다.
+                pages.push(`👨‍🍳 조리 단계\n\n${trimmedStep}`);
+            }
+        });
+    }
+
+    return pages;
 }
 
-// 2. 화면에 현재 페이지 내용을 표시하고 화살표 제어
+// 2. 화면 업데이트 함수
 function updateRecipeUI() {
     const textEl = document.getElementById('result-text');
     const pageNumEl = document.getElementById('current-page');
@@ -123,35 +132,44 @@ function updateRecipeUI() {
     const indicator = document.getElementById('page-indicator');
 
     if (recipePages.length > 0) {
-        // 현재 페이지 텍스트 표시 및 애니메이션 적용
         textEl.innerText = recipePages[currentPageIndex];
+
+        // 페이지가 바뀔 때 스크롤을 항상 맨 위로 올립니다.
+        document.querySelector('.result-card').scrollTop = 0;
+
+        // 애니메이션 효과
         textEl.classList.remove('recipe-page-active');
-        void textEl.offsetWidth; // 브라우저 강제 리플로우 (애니메이션 재시작)
+        void textEl.offsetWidth;
         textEl.classList.add('recipe-page-active');
 
-        // 페이지 번호 인디케이터 업데이트
         if (pageNumEl) pageNumEl.innerText = currentPageIndex + 1;
         if (totalNumEl) totalNumEl.innerText = recipePages.length;
-        if (indicator) indicator.style.display = 'block';
 
-        // 화살표 버튼 가시성 제어 (첫 페이지면 이전 숨김, 마지막 페이지면 다음 숨김)
-        if (prevBtn) prevBtn.style.display = (currentPageIndex === 0) ? 'none' : 'flex';
-        if (nextBtn) nextBtn.style.display = (currentPageIndex === recipePages.length - 1) ? 'none' : 'flex';
+        // 인디케이터 및 버튼 제어
+        if (recipePages.length <= 1) {
+            if (indicator) indicator.style.display = 'none';
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+        } else {
+            if (indicator) indicator.style.display = 'block';
+            if (prevBtn) prevBtn.style.display = (currentPageIndex === 0) ? 'none' : 'flex';
+            if (nextBtn) nextBtn.style.display = (currentPageIndex === recipePages.length - 1) ? 'none' : 'flex';
+        }
     }
 }
 
-// 3. 화살표 클릭 시 호출되는 페이지 이동 함수
+// 3. 페이지 이동 함수
 function changePage(direction) {
     currentPageIndex += direction;
     updateRecipeUI();
 }
 
-// 4. 공통 API 요청 함수
+// 4. API 요청 함수 (수정됨)
 async function requestAI(payload) {
-    showStep('result-area'); // 결과창으로 즉시 이동
+    showStep('result-area');
     const resultText = document.getElementById('result-text');
     const indicator = document.getElementById('page-indicator');
-    
+
     resultText.innerText = "음... 무엇이 좋을지 AI가 고민하고 있어요. 잠시만요! 🤔";
     if (indicator) indicator.style.display = 'none';
 
@@ -164,18 +182,18 @@ async function requestAI(payload) {
 
         const data = await response.json();
 
-        // 수신한 데이터를 '---' 기준으로 페이지 리스트화
-        recipePages = parseRecipeData(data);
+        // [중요] payload.mode를 전달하여 모드별로 페이지네이션 적용 여부를 결정합니다.
+        recipePages = parseRecipeData(data, payload.mode);
         currentPageIndex = 0;
 
         if (recipePages.length > 0) {
             updateRecipeUI();
         } else {
-            resultText.innerText = "추천 결과를 가져오지 못했습니다. 다시 시도해 주세요.";
+            resultText.innerText = "추천 결과를 불러오지 못했습니다.";
         }
     } catch (error) {
         console.error("Error:", error);
-        resultText.innerText = "서버와 연결이 끊겼어요. 다시 시도해 볼까요?";
+        resultText.innerText = "서버와 연결이 끊겼어요. 다시 시도해 주세요.";
     }
 }
 
@@ -183,7 +201,6 @@ async function requestAI(payload) {
  * [최종 제출 함수]
  */
 
-// 직접 만들기 완료
 function submitCookFinal() {
     requestAI({
         mode: 'cook',
@@ -192,7 +209,6 @@ function submitCookFinal() {
     });
 }
 
-// 배달/외식 완료
 function submitDelivery() {
     requestAI({
         mode: 'delivery',
